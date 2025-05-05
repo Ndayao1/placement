@@ -1,0 +1,13 @@
+Make a master dataset with all the facilities from the 3 provinces
+Clean up - Merge, pivot long as necessary, check for complete reports, select facilities of interest
+Extract data from the other reports and merge with this - FP, Child health, Immunisation
+Make groupings for the different procinces to express totals
+Create summaries for the study hospitals vs respective provinces 
+Look up trends across the years
+Create visualisation marking the various intervention points - infrastructure, training
+Create data frames for the different populations - maternal, child health, immunisation, FP
+Create averages for respective columns (coverage columns)
+When making visualisations, add a trendline for the total reports for the respective years
+For relevant reports, create proportion summaries (% based on respective columns e.g, 3rd Pentavalent as a % of respective population
+Remember to check the descrition/computation of each variable
+Have the totals and proportions of the hospitals propped against the respective province totals
