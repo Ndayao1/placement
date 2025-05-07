@@ -1,4 +1,4 @@
-# Read and process the maternal data -----------------------------------
+# Read and process the Maternal data -----------------------------------
 
 ## Load necessary packages ----
 library(openxlsx2)
@@ -69,7 +69,7 @@ for (i in 1:10) {
       
     ### Combine sheets row-wise and tag with year     
       
-    maternal <- map2_dfr(
+    hssdp <- map2_dfr(
         .x = 1:10,
         .y = years,
         ~ read_xlsx(file = "data/hssdp.xlsx", sheet = .x, startRow = 1) |>
@@ -77,7 +77,7 @@ for (i in 1:10) {
       )
       
     ### Make year the first column
-maternal <- maternal |> 
+maternal <- hssdp |> 
         relocate(year, .before = 1)
 
 # Pivot the data longer (assumes 'Facility' is the identifier column)

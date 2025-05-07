@@ -1,4 +1,4 @@
-# Read and process the immunisation data -----------------------------------
+# Read and process the Immunisation data -----------------------------------
 
 ## Load necessary packages ----
 library(openxlsx2)
@@ -32,19 +32,15 @@ all_same <- sapply(hssdp, function(df) identical(colnames(df), reference_cols))
 all_same
 
 
-### row bind sheets and then pivot longer ----
-#maternal <- bind_rows(sheet1, sheet2, .id = "sex") |>
-#mutate(sex = ifelse(sex == 1, "Male", "Female")) 
-
-##Add the year to each sheet and combine them: 
-#Loop through all 10 sheets,
-
-#Add a year column based on the sheet number,
-
-#Combine everything into one dataframe:      
-
-### Set the years
-years <- 2016:2025
+### Add the year to each sheet and combine them: 
+    #Loop through all 10 sheets,
+    
+    #Add a year column based on the sheet number,
+    
+    #Combine everything into one dataframe:      
+    
+    ### Set the years
+    years <- 2016:2025
 
 ### Combine sheets row-wise and tag with year     
 
