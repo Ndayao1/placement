@@ -58,10 +58,35 @@ immun <- immunisation |>
 # Pivot the data longer (assumes 'Facility' is the identifier column)
 immun_long <- immun |>
   pivot_longer(
-    cols = -c(year, facility),  # Keep 'year' and 'Facility', pivot everything else
+    cols = -c(year, facility, code),  # keep all identifier columns
     names_to = "indicator",
     values_to = "value"
   )
+
+
+# Create a province mapping based on hf_code -- This can be moved around as appropriate.
+
+immun_data <- immun_long |>
+  mutate(
+    province = case_when(
+      code %in% c(30101:30105, 30201, 30203:30207,
+                     30301:30320, 30401:30407) ~ "Central Province",
+      
+      code %in% c(
+        120101:120107, 120201:120207, 120301:120304,
+        120401, 120403:120407, 120502:120513,
+        120601:120603, 120701:120705, 120801:120804,
+        120901:120903, 120906, 120907
+      ) ~ "Morobe Province",
+      
+      code %in% c(
+        190101:190115, 190201:190220
+      ) ~ "West New Britain Province",
+      
+      TRUE ~ NA_character_
+    )
+  ) |>
+  filter(!is.na(province))  # This line removes NA provinces
 
 ### Visualise the trend in key immunisation indicators for selected Health Facilities
 
