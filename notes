@@ -7,7 +7,13 @@ Look up trends across the years
 Create visualisation marking the various intervention points - infrastructure, training
 Create data frames for the different populations - maternal, child health, immunisation, FP
 Create averages for respective columns (coverage columns)
-When making visualisations, add a trendline for the total reports for the respective years
+When making visualisations, add a trendline for the total http://127.0.0.1:10599/graphics/plot_zoom_png?width=1904&height=970reports for the respective years
 For relevant reports, create proportion summaries (% based on respective columns e.g, 3rd Pentavalent as a % of respective population
 Remember to check the descrition/computation of each variable
 Have the totals and proportions of the hospitals propped against the respective province totals
+
+Bitokara has no data for 2025
+CBR as opposed to actual number of births
+Complications of poor ANC - LBW
+Village birth complicatons trend
+Anny associations?

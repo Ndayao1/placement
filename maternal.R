@@ -33,9 +33,9 @@ library(oxthema)
        }
       
       ### Or this
-      sheets <- vector("list", 10)  # create empty list
+      sheets <- vector("list", 9)  # create empty list
       
-      for (i in 1:10) {
+      for (i in 1:9) {
         sheets[[i]] <- read_xlsx("data/hssdp.xlsx", sheet = i, start_row = 1)
       }
 
@@ -64,12 +64,12 @@ library(oxthema)
   #Combine everything into one dataframe:      
       
     ### Set the years
-    years <- 2016:2025
+    years <- 2016:2024
       
     ### Combine sheets row-wise and tag with year     
       
     hssdp <- map2_dfr(
-        .x = 1:10,
+        .x = 1:9,
         .y = years,
         ~ read_xlsx(file = "data/hssdp.xlsx", sheet = .x, startRow = 1) |>
           mutate(year = .y)
@@ -123,47 +123,48 @@ maternal_long <- mat_long |>
 #Filter and reshape data for the facilities  and select relevant columns
   
 ## Key indicators 1
-  selected_facilities <- c("Taraka UC", "Bitokara HC", "Kwikila HC")
+ 
+  #For Mumeng HC
+  mumeng <- c("Mumeng HC")
   
   # Define indicators and facilities of interest
   delivery_indicators <- c("pop_births", "del_still_births",
     "del_mat_deaths", "del_born_before_arr", "del_in_facility",
     "del_village_compli")
   
-  # Filter the long dataset 
-  
-  # Filter the long dataset
-  delivery <- maternal_long |>
+     # Filter for Mumeng in the long dataset
+  delivery_mumeng <- maternal_long |>
     filter(
-      facility %in% selected_facilities,
+      facility %in% mumeng,
       indicator %in% delivery_indicators
     )
   
   #set indicator order and labels
-  delivery$indicator <- factor(
-    delivery$indicator,
-    levels = delivery_indicators,
-    labels = c("Births (Population)",              ##births as first facet 
-      "Stillbirths", "Maternal deaths",
-      "Born before arrival", "In-facility deliveries",
-      "Village birth complications"
-    )
-  )
+    #For Mumeng
+  
+        delivery_mumeng$indicator <- factor(
+          delivery_mumeng$indicator,
+          levels = delivery_indicators,
+          labels = c("Births (Population)",              ##births as first facet 
+                     "Stillbirths", "Maternal deaths",
+                     "Born before arrival", "In-facility deliveries",
+                     "Village birth complications"
+          )
+        )
         
-  # Line plot 
-        ggplot(delivery, aes(x = factor(year), y = value, color = facility, group = facility)) +
+        # Line plot with intervention line
+        ggplot(delivery_mumeng, aes(x = factor(year), y = value, color = facility, group = facility)) +
           geom_line(size = 1.2) +
           geom_point(size = 3) +
           facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
           scale_color_manual(
-            values = c(
-              "Taraka UC" = "#FF0000",     # red
-              "Bitokara HC" = "#00008B",   # darkblue
-              "Kwikila HC" = "#006400"     # darkgreen
-            )
+            values = c("Mumeng HC" = "#00008B")   # darkblue
           ) +
+          # Add vertical line at year 2020 (intervention marker)
+          geom_vline(xintercept = which(levels(factor(delivery_mumeng$year)) == "2020"), 
+                     linetype = "dashed", color = "red", size = 1) +
           labs(
-            title = "Trends in Delivery Indicators",
+            title = "10-year Trend in Delivery Indicators for Mumeng HC",
             x = "Year",
             y = "Value",
             color = "Facility"
@@ -173,22 +174,24 @@ maternal_long <- mat_long |>
                 plot.title.position = "panel",
                 axis.text.x = element_text(angle = 45, hjust = 1),
                 strip.text = element_text(face = "bold", size = 12)
-              )
+          )
+        
     # Visualise the trends summaries against the province averages    
         # Define indicators and labels
-        indicator_levels <- c(
-          "no_of_reports", "pop_births", "del_still_births", 
-          "del_mat_deaths", "del_born_before_arr", "del_in_facility", "del_village_compli"
+        indicator_levels <- c("pop_births", "del_still_births", "del_mat_deaths", 
+          "del_born_before_arr", "del_in_facility", "del_village_compli"
         )
         
-        indicator_labels <- c(
-          "Reports Sent", "Births (Population)", "Stillbirths", 
-          "Maternal Deaths", "Born Before Arrival", "In-Facility Deliveries", "Village Birth Complications"
+        indicator_labels <- c("Births (Population)", "Stillbirths", "Maternal Deaths", 
+          "Born Before Arrival", "In-Facility Deliveries", "Village Birth Complications"
         )
         
         # Selected facilities
-        sel_facilities <- c("Taraka UC", "Bitokara HC", "Kwikila HC")
-        sel_provinces <- c("Central Province", "Morobe Province", "West New Britain Province")
+        sel_facilities <- c("Bulolo HC", "Mumeng HC")
+        
+        sel_province <- c("Morobe Province")
+        
+        #sel_provinces <- c("Central Province", "Morobe Province", "East New Britain Province")
         
         # Clean and label: Facility-level data
         facility_trend <- maternal_long |>
@@ -203,7 +206,7 @@ maternal_long <- mat_long |>
         # Clean and label: Province-level data
         province_trend <- province_summary |>
           filter(
-            province %in% sel_provinces,
+            province %in% sel_province,
             indicator %in% indicator_levels
           ) |>
           mutate(
@@ -224,32 +227,30 @@ maternal_long <- mat_long |>
             data = province_trend,
             aes(x = factor(year), y = avg_value, color = province, group = province),
             linetype = "dashed",
-            size = 1
+            size = 1.2
           ) +
           # Province points
           geom_point(
             data = province_trend,
             aes(x = factor(year), y = avg_value, color = province),
-            shape = 16, size = 1.5
+            shape = 16, size = 3
           ) +
           facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
           scale_fill_manual(
             values = c(
-              "Taraka UC" = "#FF0000",     # red
-              "Bitokara HC" = "#00008B",   # darkblue
-              "Kwikila HC" = "#006400"     # darkgreen
+              "Mumeng HC" = "#00008B",   # darkblue
+              "Bulolo HC" = "brown"     # 
             )
           ) +
           scale_color_manual(
-            values = c(
-              "Central Province" = "#006400",    # darkgreen
-              "Morobe Province" = "#FF0000",     # red
-              "West New Britain Province" = "#00008B"  # darkblue
-            )
+            values = c("Morobe Province" = "darkgreen"),     # brown
           ) +
+          # Add vertical line at year 2020 (intervention marker)
+          geom_vline(xintercept = which(levels(factor(facility_trend$year)) == "2020"), 
+                     linetype = "dashed", color = "red", size = 1.2) +
           labs(
             title = "Trends in Delivery Indicators: Facilities vs Province Averages",
-            subtitle = "Bars = Facility data | Dashed lines = Province averages",
+            subtitle = "Bars = Facility data | Dashed line = Province averages \n Red vertical line represents intervention" ,
             x = "Year",
             y = "Value",
             fill = "Facility",
@@ -264,130 +265,222 @@ maternal_long <- mat_long |>
           )
         
         
-        
-        ### Reports axis without decimals
-        
-        # Plot separately for Reports Sent with fixed integer y-axis
-        p1 <- facility_trend |>
-          filter(indicator == "Reports Sent") |>
-          ggplot(aes(x = factor(year), y = value, fill = facility)) +
-          geom_col(position = "dodge", alpha = 0.9) +
+        # Plot: Line (facility), dashed lines (province means)
+        ggplot() +
+          # Facility lines
           geom_line(
-            data = filter(province_trend, indicator == "Reports Sent"),
-            aes(x = factor(year), y = avg_value, color = province, group = province),
-            linetype = "dashed", size = 1
+            data = facility_trend,
+            aes(x = factor(year), y = value, color = facility, group = facility),
+            size = 1.2
           ) +
           geom_point(
-            data = filter(province_trend, indicator == "Reports Sent"),
-            aes(x = factor(year), y = avg_value, color = province),
-            shape = 16, size = 1.5
+            data = facility_trend,
+            aes(x = factor(year), y = value, color = facility),
+            size = 3
           ) +
-          scale_y_continuous(breaks = 1:12, limits = c(0, 12)) +  # Fixed integer scale
-          labs(
-            title = "Reports Sent",
-            x = "Year", y = "Reports Count"
-          ) +
-          scale_fill_manual(values = c("Taraka UC" = "#FF0000", "Bitokara HC" = "#00008B", "Kwikila HC" = "#006400")) +
-          scale_color_manual(values = c("Central Province" = "#006400", "Morobe Province" = "#FF0000", "West New Britain Province" = "#00008B")) +
-          theme_minimal() +
-          theme(plot.title = element_text(hjust = 0.5, face = "bold"))
-        
-        # Plot all other indicators
-        p2 <- facility_trend |>
-          filter(indicator != "Reports Sent") |>
-          ggplot() +
-          geom_col(aes(x = factor(year), y = value, fill = facility), position = "dodge", alpha = 0.9) +
+          # Province-level average lines
           geom_line(
-            data = filter(province_trend, indicator != "Reports Sent"),
+            data = province_trend,
             aes(x = factor(year), y = avg_value, color = province, group = province),
-            linetype = "dashed", size = 1
+            linetype = "dashed",
+            size = 1.2
           ) +
+          # Province points
           geom_point(
-            data = filter(province_trend, indicator != "Reports Sent"),
+            data = province_trend,
             aes(x = factor(year), y = avg_value, color = province),
-            shape = 16, size = 1.5
+            shape = 16, size = 3
           ) +
           facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
-          scale_fill_manual(values = c("Taraka UC" = "#FF0000", "Bitokara HC" = "#00008B", "Kwikila HC" = "#006400")) +
-          scale_color_manual(values = c("Central Province" = "#006400", "Morobe Province" = "#FF0000", "West New Britain Province" = "#00008B")) +
-          labs(
-            title = "Trends in Other Delivery Indicators",
-            subtitle = "Bars = Facility data | Dashed lines = Province averages",
-            x = "Year", y = "Value"
+          scale_color_manual(
+            values = c("Morobe Province" = "darkgreen",  "Mumeng HC" = "#00008B", "Bulolo HC" = "brown"     # 
+            ),  
           ) +
-          theme_minimal() +
+          # Add vertical line at year 2020 (intervention marker)
+          geom_vline(xintercept = which(levels(factor(facility_trend$year)) == "2020"), 
+                     linetype = "dashed", color = "red", size = 1.2) +
+          labs(
+            title = "Trends in Delivery Indicators: Facilities vs Province Averages",
+            subtitle = "Continuous line = Facility data | Dashed line = Province averages \n Red vertical line represents intervention" ,
+            x = "Year",
+            y = "Value",
+            fill = "Facility",
+            color = "Province"
+          ) +
+          theme_minimal(base_size = 12) +
           theme(
             plot.title = element_text(hjust = 0.5, face = "bold"),
-            plot.subtitle = element_text(hjust = 0.5),
+            plot.subtitle = element_text(hjust = 0.5, face = "italic"),
             axis.text.x = element_text(angle = 45, hjust = 1),
             strip.text = element_text(face = "bold")
           )
         
-        # Show both plots
-        library(patchwork)
-        p1 / p2  # vertically combi
-        ## Key indicators 2
-selected_facilities <- c("Taraka UC", "Bitokara HC", "Kwikila HC")
-
-      anc_mat <- maternal |>
-        filter(facility %in% selected_facilities) |>
-        select(
-          year, facility,
-          anc_1st_visit,
-          anc_4th_visit,
-          anc_booster_tt,
-          anc_1st_cov,
-          anc_4th_cov,
-          anc_avg_cov
-        )|>
-        pivot_longer(
-          cols = -c(year, facility),
-          names_to = "indicator",
-          values_to = "value"
-        ) 
-
-      ##Plot
+        
+    ## Key indicators 2
       
-      anc_mat$indicator <- factor(anc_mat$indicator, 
-                                  levels = c("anc_1st_visit", "anc_4th_visit", "anc_booster_tt", "anc_1st_cov", 
-                                             "anc_4th_cov", "anc_avg_cov")) ##pop_births as first facet
-      
-      ggplot(anc_mat, aes(x = factor(year), y = value, fill = facility)) +
-        geom_col(position = "dodge", alpha = 0.8) +
-        facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
-        scale_fill_manual(
-          values = c(
-            "Taraka UC" = "#00008B",     # darkblue
-            "Bitokara HC" = "#006400",   # darkgreen
-            "Kwikila HC" = "#8B4513"     # chocolate
-          )
-        ) + 
-        labs(
-          title = "ANC attendance in the study facilities (2016–2025)",
-          x = "Year",
-          y = "Value",
-          fill = "Facility"
-        ) +
-        theme_minimal(base_size = 12) +
-        theme(plot.title = element_text(hjust = 0.5),  # Center the title
-              plot.title.position = "panel",
-          axis.text.x = element_text(angle = 45, hjust = 1),
-          strip.text = element_text(face = "bold", size = 12)
+    # Filter for selected facilities and ANC indicators
+        # Visualise the trends summaries against the province averages    
+        # Define indicators and labels
+        anc_indicator_levels <- c(
+          "anc_1st_visit",
+          "anc_4th_visit",
+          "anc_booster_tt",
+          "anc_1st_cov",
+          "anc_4th_cov",
+          "anc_avg_cov"
         )
-
-      ## Key indicators 3 - Newborn care indicators
-      selected_facilities <- c("Taraka UC", "Bitokara HC", "Kwikila HC")
+        
+        anc_indicator_labels <- c(
+          "First ANC visit",
+          "Fourth ANC visit",
+          "Booster TT dose (ANC)",
+          "First ANC visit coverage",
+          "Fourth ANC visit coverage",
+          "Average ANC coverage"
+        )
+        
+        # Selected facilities
+        sel_facilities <- c("Bulolo HC", "Mumeng HC")
+        
+        sel_province <- c("Morobe Province")
+        
+        #sel_provinces <- c("Central Province", "Morobe Province", "East New Britain Province")
+        
+        # Clean and label: Facility-level data
+        anc_facility_trend <- maternal_long |>
+          filter(
+            facility %in% sel_facilities,
+            indicator %in% anc_indicator_levels
+          ) |>
+          mutate(
+            indicator = factor(indicator, levels = anc_indicator_levels, labels = anc_indicator_labels)
+          )
+        
+        # Clean and label: Province-level data
+        anc_province_trend <- province_summary |>
+          filter(
+            province %in% sel_province,
+            indicator %in% anc_indicator_levels 
+          ) |>
+          mutate(
+            indicator = factor(indicator, levels = anc_indicator_levels, labels = anc_indicator_labels)
+          )
+        
+        # Plot: Line (facility), dashed lines (province means)
+        ggplot() +
+          # Facility lines
+          geom_line(
+            data = anc_facility_trend,
+            aes(x = factor(year), y = value, color = facility, group = facility),
+            size = 1.2
+          ) +
+          geom_point(
+            data = anc_facility_trend,
+            aes(x = factor(year), y = value, color = facility),
+            size = 3
+          ) +
+          # Province-level average lines
+          geom_line(
+            data = anc_province_trend,
+            aes(x = factor(year), y = avg_value, color = province, group = province),
+            linetype = "dashed",
+            size = 1.2
+          ) +
+          # Province points
+          geom_point(
+            data = anc_province_trend,
+            aes(x = factor(year), y = avg_value, color = province),
+            shape = 16, size = 3
+          ) +
+          facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
+          scale_color_manual(
+            values = c("Morobe Province" = "darkgreen",  "Mumeng HC" = "#00008B", "Bulolo HC" = "brown"     # 
+            ),  
+          ) +
+          # Add vertical line at year 2020 (intervention marker)
+          geom_vline(xintercept = which(levels(factor(facility_trend$year)) == "2020"), 
+                     linetype = "dashed", color = "red", size = 1.2) +
+          labs(
+            title = "Trends in ANC Indicators for selected facilities (2016-2024)",
+            subtitle = "Solid line = Facility data | Dashed line = Province averages \n Red vertical line represents intervention" ,
+            x = "Year",
+            y = "Value",
+            fill = "Facility",
+            color = "Province"
+          ) +
+          theme_minimal(base_size = 12) +
+          theme(
+            plot.title = element_text(hjust = 0.5, face = "bold"),
+            plot.subtitle = element_text(hjust = 0.5, face = "italic"),
+            axis.text.x = element_text(angle = 45, hjust = 1),
+            strip.text = element_text(face = "bold")
+          )
+        
+        ##Bar pplot with Province Trend
+        # Plot: Bars (facility), dashed lines (province means)
+        ggplot() +
+          # Facility bars
+          geom_col(
+            data = anc_facility_trend,
+            aes(x = factor(year), y = value, fill = facility),
+            position = "dodge",
+            alpha = 0.9
+          ) +
+          # Province-level average lines
+          geom_line(
+            data = anc_province_trend,
+            aes(x = factor(year), y = avg_value, color = province, group = province),
+            linetype = "dashed",
+            size = 1.2
+          ) +
+          # Province points
+          geom_point(
+            data = anc_province_trend,
+            aes(x = factor(year), y = avg_value, color = province),
+            shape = 16, size = 3
+          ) +
+          facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
+          scale_fill_manual(
+            values = c(
+              "Mumeng HC" = "#00008B",   # darkblue
+              "Bulolo HC" = "brown"     # 
+            )
+          ) +
+          scale_color_manual(
+            values = c("Morobe Province" = "darkgreen"),     # brown
+          ) +
+          # Add vertical line at year 2020 (intervention marker)
+          geom_vline(xintercept = which(levels(factor(anc_facility_trend$year)) == "2020"), 
+                     linetype = "dashed", color = "red", size = 1.2) +
+          labs(
+            title = "Trends in ANC Indicators for selected facilities (2016-2024)",
+            subtitle = "Bars = Facility data | Dashed line = Province averages \n Red vertical line represents intervention" ,
+            x = "Year",
+            y = "Value",
+            fill = "Facility",
+            color = "Province"
+          ) +
+          theme_minimal(base_size = 12) +
+          theme(
+            plot.title = element_text(hjust = 0.5, face = "bold"),
+            plot.subtitle = element_text(hjust = 0.5, face = "italic"),
+            axis.text.x = element_text(angle = 45, hjust = 1),
+            strip.text = element_text(face = "bold")
+          )
+        
+        
+ ## Key indicators 3 - Newborn care indicators
       
       newborn <- maternal |>
-        filter(facility %in% selected_facilities) |>
+        filter(facility %in% sel_facilities) |>
         select(
           year, facility,
           del_lbw_2500g,
           resuscitated,
           brst_feeding_1hr,
           skin_skin,
-          kang_mother_care,
-          bebi_kol
+          kang_mother_care
+      
         )|>
         pivot_longer(
           cols = -c(year, facility),
@@ -395,74 +488,151 @@ selected_facilities <- c("Taraka UC", "Bitokara HC", "Kwikila HC")
           values_to = "value"
         ) 
       
-      ##Plot
+      # Filter for selected facilities and Newborn indicators
+      # Visualise the trends summaries against the province averages    
+      # Define indicators and labels
+      newborn_indicator_levels <- c(
+        "del_lbw_2500g",
+        "resuscitated",
+        "brst_feeding_1hr",
+        "skin_skin",
+        "kang_mother_care"
+      )
       
-      newborn$indicator <- factor(newborn$indicator, 
-                                  levels = c("del_lbw_2500g", "resuscitated", "brst_feeding_1hr", "skin_skin", 
-                                             "kang_mother_care", "bebi_kol")) ##facet order
+      newborn_indicator_labels <- c(
+          "Low birthweight (<2500g)",
+          "Resuscitated at birth",
+          "Breastfeeding within 1 hour",
+          "Skin-to-skin contact",
+          "Kangaroo mother care"
+      )
       
-      ggplot(newborn, aes(x = factor(year), y = value, color = facility, group = facility)) +
-        geom_line(size = 1.2) +
-        geom_point(size = 3) +
+      # Selected facilities
+      sel_facilities <- c("Bulolo HC", "Mumeng HC")
+      
+      sel_province <- c("Morobe Province")
+      
+      #sel_provinces <- c("Central Province", "Morobe Province", "East New Britain Province")
+      
+      # Clean and label: Facility-level data
+      newborn_facility_trend <- maternal_long |>
+        filter(
+          facility %in% sel_facilities,
+          indicator %in% newborn_indicator_levels
+        ) |>
+        mutate(
+          indicator = factor(indicator, levels = newborn_indicator_levels, labels = newborn_indicator_labels)
+        )
+      
+      # Clean and label: Province-level data
+      newborn_province_trend <- province_summary |>
+        filter(
+          province %in% sel_province,
+          indicator %in% newborn_indicator_levels 
+        ) |>
+        mutate(
+          indicator = factor(indicator, levels = newborn_indicator_levels, labels = newborn_indicator_labels)
+        )
+      
+      # Plot: Line (facility), dashed lines (province means)
+      ggplot() +
+        # Facility lines
+        geom_line(
+          data = newborn_facility_trend,
+          aes(x = factor(year), y = value, color = facility, group = facility),
+          size = 1.2
+        ) +
+        geom_point(
+          data = newborn_facility_trend,
+          aes(x = factor(year), y = value, color = facility),
+          size = 3
+        ) +
+        # Province-level average lines
+        geom_line(
+          data = newborn_province_trend,
+          aes(x = factor(year), y = avg_value, color = province, group = province),
+          linetype = "dashed",
+          size = 1.2
+        ) +
+        # Province points
+        geom_point(
+          data = newborn_province_trend,
+          aes(x = factor(year), y = avg_value, color = province),
+          shape = 16, size = 3
+        ) +
         facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
         scale_color_manual(
-          values = c(
-            "Taraka UC" = "#FF0000",     # red
-            "Bitokara HC" = "#00008B",   # darkblue
-            "Kwikila HC" = "#006400"     # darkgreen
-          )
+          values = c("Morobe Province" = "darkgreen",  "Mumeng HC" = "blue", "Bulolo HC" = "brown"     # 
+          ),  
         ) +
+        # Add vertical line at year 2020 (intervention marker)
+        geom_vline(xintercept = which(levels(factor(facility_trend$year)) == "2020"), 
+                   linetype = "dashed", color = "red", size = 1.2) +
         labs(
-          title = "Trends in Newborn Care Indicators",
+          title = "Trends in Newborn care Indicators for selected facilities (2016-2024)",
+          subtitle = "Solid line = Facility data | Dashed line = Province averages \n Red vertical line represents intervention" ,
           x = "Year",
           y = "Value",
-          color = "Facility"
+          fill = "Facility",
+          color = "Province"
         ) +
         theme_minimal(base_size = 12) +
-        theme(plot.title = element_text(hjust = 0.5),  # Center the title
-              plot.title.position = "panel",
-              axis.text.x = element_text(angle = 45, hjust = 1),
-              strip.text = element_text(face = "bold", size = 12)
-            )
-  #taraka_data <- maternal |>
-      #filter(facility == "Taraka UC") |>
-      #select(year, facility, no_of_reports, pop_births, del_lbw_2500g, del_still_births, del_mat_deaths, del_born_before_arr, del_in_facility, brst_feeding_1hr)
-
-   
-  # Filter and reshape the data
-  maternal_filtered <- maternal |>
-    filter(facility == "Taraka UC") |>
-    select(year, facility, no_of_reports, brst_feeding_1hr, del_born_before_arr, del_in_facility,
-           del_lbw_2500g, del_mat_deaths, del_still_births) |>
-    pivot_longer(
-      cols = c(brst_feeding_1hr, del_born_before_arr, del_in_facility,
-               del_lbw_2500g, del_mat_deaths, del_still_births),
-      names_to = "Indicator",
-      values_to = "Value"
-    )
-
-  # Separate data for line plot
-  line_data <- maternal |>
-    filter(facility == "Taraka UC") |>
-    select(year, no_of_reports)
-
-# Plot
-  ggplot(maternal_filtered, aes(x = factor(year), y = Value, fill = Indicator)) +
-    geom_col(show.legend = FALSE) +
-    facet_wrap(~ Indicator, scales = "free_y") +
-    geom_line(data = line_data, aes(x = factor(year), y = no_of_reports, group = 1),
-              inherit.aes = FALSE, color = "black", linetype = "dashed", size = 1) +
-    geom_point(data = line_data, aes(x = factor(year), y = no_of_reports),
-               inherit.aes = FALSE, color = "black", size = 2) +
-    labs(
-      title = "Trends in Key Maternal Indicators for Taraka UC (2016–2025)",
-      x = "Year", y = "Value",
-      caption = "Dashed line = Number of reports"
-    ) +
-    theme_minimal() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      strip.text = element_text(face = "bold"),
-      plot.title = element_text(face = "bold")
-    )
-  
+        theme(
+          plot.title = element_text(hjust = 0.5, face = "bold"),
+          plot.subtitle = element_text(hjust = 0.5, face = "italic"),
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.text = element_text(face = "bold")
+        )
+      
+           ##Bar pplot with Province Trend
+      # Plot: Bars (facility), dashed lines (province means)
+      ggplot() +
+        # Facility bars
+        geom_col(
+          data = anc_facility_trend,
+          aes(x = factor(year), y = value, fill = facility),
+          position = "dodge",
+          alpha = 0.9
+        ) +
+        # Province-level average lines
+        geom_line(
+          data = anc_province_trend,
+          aes(x = factor(year), y = avg_value, color = province, group = province),
+          linetype = "dashed",
+          size = 1.2
+        ) +
+        # Province points
+        geom_point(
+          data = anc_province_trend,
+          aes(x = factor(year), y = avg_value, color = province),
+          shape = 16, size = 3
+        ) +
+        facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
+        scale_fill_manual(
+          values = c(
+            "Mumeng HC" = "#00008B",   # darkblue
+            "Bulolo HC" = "brown"     # 
+          )
+        ) +
+        scale_color_manual(
+          values = c("Morobe Province" = "darkgreen"),     # brown
+        ) +
+        # Add vertical line at year 2020 (intervention marker)
+        geom_vline(xintercept = which(levels(factor(anc_facility_trend$year)) == "2020"), 
+                   linetype = "dashed", color = "red", size = 1.2) +
+        labs(
+          title = "Trends in ANC Indicators for selected facilities (2016-2024)",
+          subtitle = "Bars = Facility data | Dashed line = Province averages \n Red vertical line represents intervention" ,
+          x = "Year",
+          y = "Value",
+          fill = "Facility",
+          color = "Province"
+        ) +
+        theme_minimal(base_size = 12) +
+        theme(
+          plot.title = element_text(hjust = 0.5, face = "bold"),
+          plot.subtitle = element_text(hjust = 0.5, face = "italic"),
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.text = element_text(face = "bold")
+        )
+      
