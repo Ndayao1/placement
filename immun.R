@@ -7,12 +7,13 @@ library(tidyr)
 library(ggplot2)
 library(purrr)
 library(tidyverse)
+library(ggh4x)
 #library(tidyverse) #hashed out to avoid conflicts with above packages
 
 
 ## Read datasets needed ----
 
-hssdp <- vector("list", 10)  # create empty list
+hssdp <- vector("list", 9)  # create empty list
 
 for (i in 1:10) {
   hssdp[[i]] <- read_xlsx("data/immunisation.xlsx", sheet = i, start_row = 1)
@@ -40,12 +41,12 @@ all_same
     #Combine everything into one dataframe:      
     
     ### Set the years
-    years <- 2016:2025
+    years <- 2016:2024
 
 ### Combine sheets row-wise and tag with year     
 
 immunisation <- map2_dfr(
-  .x = 1:10,
+  .x = 1:9,
   .y = years,
   ~ read_xlsx(file = "data/immunisation.xlsx", sheet = .x, startRow = 1) |>
     mutate(year = .y)
@@ -93,117 +94,142 @@ immun_data <- immun_long |>
 #Filter and reshape data for the facilities  and select relevant columns
 
 ## Key indicators 1
-sel_facilities <- c("Taraka UC", "Bitokara HC", "Kwikila HC")
 
-sel_bcg <- c("under_1yr_pop", "bcg_birth", "bcg_total")
+      facilities <- c(
+        "Kwikila HC" = "Kwikila HC",
+        "Mumeng HC" = "Mumeng CHP",
+        "Gaulim SC" = "Gaulim SC"
+      )
 
-bcg <- immun_long |>
-  filter(
-    facility %in% sel_facilities,
-    indicator %in% sel_bcg
-  )
+      immun_indicators <- c("hep_bir", "bcg_birth", "bcg_total")
+      
+      # Filter and RENAME facilities and variables
+      
+      immun_facilities <- immun_long %>%
+        filter(
+          facility %in% names(facilities),
+          indicator %in% immun_indicators
+        ) %>%
+        mutate(
+          facility = recode(facility, !!!facilities)
+        )
+      
+      immun_facilities$indicator <- factor(
+        immun_facilities$indicator,
+        levels = immun_indicators,
+        labels = c(
+          "Hepatitis B at birth coverage", "BCG at birth coverage", 
+          "Total under 1 BCG coverage")
+      )
+      ##Plot for Immunisation indicators
+      
+      # Ensure 'year' is a factor with all relevant levels
+      immun_facilities$year <- factor(immun_facilities$year)
+      
+      # Find the positions for the years 2020, 2022, and 2023
+      year_levels <- levels(immun_facilities$year)
+      x2020 <- which(year_levels == "2020")
+      x2022 <- which(year_levels == "2022")
+      x2023 <- which(year_levels == "2023")
+      
+      ## Immunisation Plot
+      
+      ggplot(immun_facilities, aes(
+        x = year, y = value, 
+        group = facility, 
+        linetype = facility, 
+        shape = facility
+      )) +
+        geom_line(size = 1) +
+        geom_point(size = 2.6) +
+        facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
+        # Add vertical lines at 2020 (black), 2022 (blue), 2023 (red)
+        geom_vline(xintercept = x2020, linetype = "dashed", color = "black", size = 1) +
+        geom_vline(xintercept = x2022, linetype = "dashed", color = "#0072B2", size = 1) + # blue
+        geom_vline(xintercept = x2023, linetype = "dashed", color = "#D55E00", size = 1) + # red-orange
+        scale_linetype_manual(
+          values = c("Kwikila HC" = "solid", "Mumeng CHP" = "dashed", "Gaulim SC" = "dotted")
+        ) +
+        scale_shape_manual(
+          values = c("Kwikila HC" = 16, "Mumeng CHP" = 17, "Gaulim SC" = 15)
+        ) +
+        # Use ggh4x::facetted_pos_scales to customise
+        facetted_pos_scales(
+          y = list(
+            scale_y_continuous(limits = c(0, 100), breaks = c(0, 25, 50, 75, 100)),
+            scale_y_continuous(limits = c(0, 100), breaks = c(0, 25, 50, 75, 100)),
+            scale_y_continuous(limits = c(0, 100), breaks = c(0, 25, 50, 75, 100))
+          )
+        ) +
+        labs(
+          title = "Yearly trends in immunisation coverage (%)",
+          subtitle = "Vertical lines: 2020 = Mumeng upgrade; 2022 = Training (Kwikila & Gaulim); 2023 = Gaulim upgrade",
+          x = "Year",
+          y = "Value",
+          linetype = "Facility",
+          shape = "Facility"
+        ) +
+        theme_gray(base_size = 12) +
+        theme(
+          plot.title = element_text(hjust = 0.5, face = "bold"),
+          plot.subtitle = element_text(hjust = 0.5, face = "plain"),
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.text = element_text(face = "bold")
+        )
 
-# Set indicator factor levels (to control facet order and renaming)
-indicator_labels <- c(
-  "under_1yr_pop" = "Under-1yr population", ## under_1 population as first facet 
-  "bcg_birth" = "BCG at birth",
-  "bcg_total" = "Total BCG"
-)  
-bcg$indicator <- factor(bcg$indicator, levels = names(indicator_labels), labels = indicator_labels)
 
-#
-# Line plot 
-ggplot(bcg, aes(x = factor(year), y = value, fill = facility)) +
-  geom_col(position = "dodge", alpha = 0.9) +
-  facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
-  scale_fill_manual(
-    values = c(
-      "Taraka UC" = "#104E8B",     # dodgerblue4
-      "Bitokara HC" = "#8B0000",   # darkred
-      "Kwikila HC" = "#2F4F4F"     # darkslategray
-    )
-  ) +
-  labs(
-    title = "Trends in Immunisation Indicators (BCG)",
-    x = "Year",
-    y = "Value",
-    color = "Facility"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(plot.title = element_text(hjust = 0.5),  # Center the title
-        plot.title.position = "panel",
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        strip.text = element_text(face = "bold", size = 12)
-  )
-
-# BCG data by facility facets
-
-# Define selected facilities
-sel_facilities <- c("Taraka UC", "Bitokara HC", "Kwikila HC")
-
-
-# Subset for indicators of interest (for bars)
-immun_data_facets <- immun_long |>
-  filter(facility %in% sel_facilities,
-         indicator %in% names(indicator_labels)) |>
-  mutate(indicator = recode(indicator, !!!indicator_labels))
-
-# Subset for reports_sent line (will overlay on top)
-reports_line_data <- immun_long |>
-  filter(facility %in% sel_facilities, indicator == "reports_sent")
-# Select only the indicators of interest (excluding reports_sent from facets)
-indicator_labels <- c(
-  "under_1yr_pop" = "Under-1yr population",
-  "bcg_birth"     = "BCG at birth",
-  "bcg_total"     = "Total BCG"
-)
-
-# Apply readable names to the indicator variable in both datasets
-immun_data_facets$indicator <- recode(immun_data_facets$indicator, !!!indicator_labels)
-
-
-# Plot
-ggplot() +
-  # Bars for selected indicators
-  geom_col(
-    data = immun_data_facets,
-    aes(x = factor(year), y = value, fill = indicator),
-    position = "dodge",
-    alpha = 0.85
-  ) +
-  # Dashed trend line for reports_sent
-  geom_line(
-    data = reports_line_data,
-    aes(x = factor(year), y = value * 10, group = 1),  # scale optional
-    color = "red",
-    linetype = "dashed",
-    size = 1
-  ) +
-  geom_point(
-    data = reports_line_data,
-    aes(x = factor(year), y = value * 10),
-    color = "black",
-    size = 1
-  ) +
-  facet_wrap(~ facility, scales = "free_y") +
-  scale_fill_manual(
-    values = c(
-      "BCG at birth" = "#8B1A1A",     # firebrick4
-      "Total BCG" = "#00008B",   # darkblue
-      "Under-1yr population" = "#006400"     # darkgreen
-    )
-  ) +
-  labs(
-    title = "Trends in Immunisation Indicators (2016–2025)",
-    plot.title.position = "panel",
-    subtitle = "Dashed line shows number of reports (scaled ×10)",
-    x = "Year",
-    y = "Value",
-    fill = "Indicator"
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    strip.text = element_text(face = "bold")
-  )
+####-- Barplot
+      
+      # Define Oxford colour palette for the three facilities
+      oxford_colors <- c(
+        "Kwikila HC" = "#002147",  # Oxford Blue
+        "Mumeng CHP" = "#0072B2",  # Blue
+        "Gaulim SC" = "#008000"   # Oxford Green
+      )
+      
+      # Ensure 'year' is a factor with all relevant levels
+      immun_facilities$year <- factor(immun_facilities$year)
+      
+      # Find the positions for the years 2020, 2022, and 2023
+      year_levels <- levels(immun_facilities$year)
+      x2020 <- which(year_levels == "2020")
+      x2022 <- which(year_levels == "2022")
+      x2023 <- which(year_levels == "2023")
+      
+      ggplot(immun_facilities, aes(
+        x = year, y = value, 
+        fill = facility
+      )) +
+        geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+        facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
+        # Add vertical lines at 2020 (black), 2022 (blue), 2023 (red)
+        geom_vline(xintercept = x2020, linetype = "dashed", color = "black", size = 1) +
+        geom_vline(xintercept = x2022, linetype = "dashed", color = "#0072B2", size = 1) +
+        geom_vline(xintercept = x2023, linetype = "dashed", color = "#D55E00", size = 1) +
+        
+        scale_fill_manual(
+          values = oxford_colors,
+          name = "Facility"
+        ) +
+        # Use ggh4x::facetted_pos_scales to customise
+        facetted_pos_scales(
+          y = list(
+            scale_y_continuous(limits = c(0, 100), breaks = c(0, 25, 50, 75, 100)),
+            scale_y_continuous(limits = c(0, 100), breaks = c(0, 25, 50, 75, 100)),
+            scale_y_continuous(limits = c(0, 100), breaks = c(0, 25, 50, 75, 100))
+          )
+        ) +
+        labs(
+          title = "Yearly trends in immunisation coverage (%)",
+          subtitle = "Vertical lines: 2020 = Mumeng upgrade; 2022 = Training (Kwikila & Gaulim); 2023 = Gaulim upgrade",
+          x = "Year",
+          y = "Value",
+          fill = "Facility"
+        ) +
+        theme_gray(base_size = 12) +
+        theme(
+          plot.title = element_text(hjust = 0.5, face = "bold"),
+          plot.subtitle = element_text(hjust = 0.5, face = "plain"),
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.text = element_text(face = "bold")
+        )
