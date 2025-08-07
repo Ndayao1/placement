@@ -97,8 +97,8 @@ immun_data <- immun_long |>
 
       facilities <- c(
         "Kwikila HC" = "Kwikila HC",
-        "Mumeng HC" = "Mumeng CHP",
-        "Gaulim SC" = "Gaulim SC"
+        "Mumeng HC" = "Mumeng HC",
+        "Gaulim SC" = "Gaulim CHP"
       )
 
       immun_indicators <- c("hep_bir", "bcg_birth", "bcg_total")
@@ -148,10 +148,10 @@ immun_data <- immun_long |>
         geom_vline(xintercept = x2022, linetype = "dashed", color = "#0072B2", size = 1) + # blue
         geom_vline(xintercept = x2023, linetype = "dashed", color = "#D55E00", size = 1) + # red-orange
         scale_linetype_manual(
-          values = c("Kwikila HC" = "solid", "Mumeng CHP" = "dashed", "Gaulim SC" = "dotted")
+          values = c("Kwikila HC" = "solid", "Mumeng HC" = "dashed", "Gaulim CHP" = "dotted")
         ) +
         scale_shape_manual(
-          values = c("Kwikila HC" = 16, "Mumeng CHP" = 17, "Gaulim SC" = 15)
+          values = c("Kwikila HC" = 16, "Mumeng HC" = 17, "Gaulim CHP" = 15)
         ) +
         # Use ggh4x::facetted_pos_scales to customise
         facetted_pos_scales(
@@ -183,8 +183,8 @@ immun_data <- immun_long |>
       # Define Oxford colour palette for the three facilities
       oxford_colors <- c(
         "Kwikila HC" = "#002147",  # Oxford Blue
-        "Mumeng CHP" = "#0072B2",  # Blue
-        "Gaulim SC" = "#008000"   # Oxford Green
+        "Mumeng HC" = "#0072B2",  # Blue
+        "Gaulim CHP" = "#008000"   # Oxford Green
       )
       
       # Ensure 'year' is a factor with all relevant levels

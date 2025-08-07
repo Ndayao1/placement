@@ -132,11 +132,62 @@ maternal_long <- mat_long |>
   # Create a named vector for renaming
   facilities <- c(
     "Kwikila HC" = "Kwikila HC",
-    "Mumeng HC" = "Mumeng CHP",
-    "Gaulim SC" = "Gaulim SC"
+    "Mumeng HC" = "Mumeng HC",
+    "Gaulim SC" = "Gaulim CHP"
   )
   
+  oxford_colors <- c(
+    "Kwikila HC" = "#002147",  # Oxford Blue
+    "Mumeng HC" = "#0072B2",  # Blue
+    "Gaulim CHP" = "#008000"   # Oxford Green
+  )
   
+  #-------Potting the Estimated births
+  ### Filter and RENAME facility
+  # Filter the dataset for pop_births indicator (if needed)
+  pop_indicator <- "pop_births"
+  
+  birth_facilities <- maternal_long %>%
+    filter(
+      facility %in% names(facilities),
+      indicator %in% pop_indicator
+    ) %>%
+    mutate(
+      facility = recode(facility, !!!facilities)
+    )
+  
+  
+  
+  # Set indicator order and labels
+  birth_facilities$indicator <- factor(
+    birth_facilities$indicator,
+    levels = pop_indicator,
+    labels = "Estimated Annual Births"
+    )
+  
+  
+   # Create the barplot
+  ggplot(birth_facilities, aes(x = factor(year), y = value, fill = factor(facility))) +
+    geom_bar(stat = "identity", position = position_dodge()) +
+    geom_text(aes(label = value), 
+              position = position_dodge(width = 0.9),  # Match dodge width to geom_bar
+              vjust = -0.3,                            # Slightly above the bar
+              size = 3.5) +
+    scale_fill_manual(values = oxford_colors) +
+    labs(
+      title = "Estimated Annual Births",
+      x = "Year",
+      y = "Number of Births",
+      fill = "Facility"
+    ) +
+    theme_minimal() +
+     theme(
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, face = "plain"),
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      strip.text = element_text(face = "bold"))
+  
+  ###---Plot for deliveries 
   delivery_indicators <- c("del_in_facility", "del_village_att", "del_still_births", "del_mat_deaths", 
                            "del_born_before_arr", "del_village_compli")
   
@@ -152,7 +203,6 @@ maternal_long <- mat_long |>
     )
   
     
-  
   # Set indicator order and labels
   delivery_facilities$indicator <- factor(
     delivery_facilities$indicator,
@@ -188,10 +238,10 @@ maternal_long <- mat_long |>
     geom_vline(xintercept = x2022, linetype = "dashed", color = "#0072B2", size = 1) + # blue
     geom_vline(xintercept = x2023, linetype = "dashed", color = "#D55E00", size = 1) + # red-orange
     scale_linetype_manual(
-      values = c("Kwikila HC" = "solid", "Mumeng CHP" = "dashed", "Gaulim SC" = "dotted")
+      values = c("Kwikila HC" = "solid", "Mumeng HC" = "dashed", "Gaulim CHP" = "dotted")
     ) +
     scale_shape_manual(
-      values = c("Kwikila HC" = 16, "Mumeng CHP" = 17, "Gaulim SC" = 15)
+      values = c("Kwikila HC" = 16, "Mumeng HC" = 17, "Gaulim CHP" = 15)
     ) +
     labs(
       title = "Yearly trends in delivery indicators",
@@ -226,10 +276,10 @@ maternal_long <- mat_long |>
     geom_vline(xintercept = x2022, linetype = "dashed", color = "#0072B2", size = 1) +
     geom_vline(xintercept = x2023, linetype = "dashed", color = "#D55E00", size = 1) +
     scale_linetype_manual(
-      values = c("Kwikila HC" = "solid", "Mumeng CHP" = "dashed", "Gaulim SC" = "dotted")
+      values = c("Kwikila HC" = "solid", "Mumeng HC" = "dashed", "Gaulim CHP" = "dotted")
     ) +
     scale_shape_manual(
-      values = c("Kwikila HC" = 16, "Mumeng CHP" = 17, "Gaulim SC" = 15)
+      values = c("Kwikila HC" = 16, "Mumeng HC" = 17, "Gaulim CHP" = 15)
     ) +
     # Use ggh4x::facetted_pos_scales to customise
     facetted_pos_scales(
@@ -306,10 +356,10 @@ maternal_long <- mat_long |>
     geom_vline(xintercept = x2022, linetype = "dashed", color = "#0072B2", size = 1) + # blue
     geom_vline(xintercept = x2023, linetype = "dashed", color = "#D55E00", size = 1) + # red-orange
     scale_linetype_manual(
-      values = c("Kwikila HC" = "solid", "Mumeng CHP" = "dashed", "Gaulim SC" = "dotted")
+      values = c("Kwikila HC" = "solid", "Mumeng HC" = "dashed", "Gaulim CHP" = "dotted")
     ) +
     scale_shape_manual(
-      values = c("Kwikila HC" = 16, "Mumeng CHP" = 17, "Gaulim SC" = 15)
+      values = c("Kwikila HC" = 16, "Mumeng HC" = 17, "Gaulim CHP" = 15)
     ) +
     # Use ggh4x::facetted_pos_scales to customise
     facetted_pos_scales(
@@ -385,10 +435,10 @@ maternal_long <- mat_long |>
     geom_vline(xintercept = x2022, linetype = "dashed", color = "#0072B2", size = 1) + # blue
     geom_vline(xintercept = x2023, linetype = "dashed", color = "#D55E00", size = 1) + # red-orange
     scale_linetype_manual(
-      values = c("Kwikila HC" = "solid", "Mumeng CHP" = "dashed", "Gaulim SC" = "dotted")
+      values = c("Kwikila HC" = "solid", "Mumeng HC" = "dashed", "Gaulim CHP" = "dotted")
     ) +
     scale_shape_manual(
-      values = c("Kwikila HC" = 16, "Mumeng CHP" = 17, "Gaulim SC" = 15)
+      values = c("Kwikila HC" = 16, "Mumeng HC" = 17, "Gaulim CHP" = 15)
     ) +
     # Use ggh4x::facetted_pos_scales to customise
     facetted_pos_scales(
